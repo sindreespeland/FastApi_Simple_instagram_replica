@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List, Optional
 
 class BaseDisplay(BaseModel):
     class Config():
@@ -24,9 +25,16 @@ class PostBase(BaseModel):
     creator_id: int
 
 # For post display
-class UserPostDisplay(BaseModel):
+class UserPostDisplay(BaseDisplay):
     id: int
     username: str
+
+# For post display
+class CommentPostDisplay(BaseDisplay):
+    id: int
+    text: str
+    username: str
+    timestamp: datetime
 
 class PostDisplay(BaseDisplay):
     id: int
@@ -35,3 +43,21 @@ class PostDisplay(BaseDisplay):
     caption: str
     timestamp: datetime
     user: UserPostDisplay
+    comments: List[CommentPostDisplay]
+
+class UserAuth(BaseModel):
+    id: int
+    username: str
+    email: str
+
+class CommentBase(BaseModel):
+    username: str
+    text: str
+    post_id: int
+
+class CommentDisplay(BaseDisplay):
+    id: int
+    text: str
+    username: str
+    timestamp: datetime
+    post_id: int

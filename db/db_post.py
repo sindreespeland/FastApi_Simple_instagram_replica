@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from .models import DbPost
 from datetime import datetime
+from fastapi import HTTPException, status
 
 async def create_post(db: AsyncSession, request: PostBase):
     new_post = DbPost(
@@ -20,9 +21,14 @@ async def create_post(db: AsyncSession, request: PostBase):
 
     return new_post
 
-async def get_post_with_user(db: AsyncSession, post_id: int) -> DbPost:
+async def get_post_with_user_and_comments(db: AsyncSession, post_id: int) -> DbPost:
     result = await db.execute(
-        select(DbPost).options(selectinload(DbPost.user)).where(DbPost.id == post_id)
+        select(DbPost)
+        .options(
+            selectinload(DbPost.user),
+            selectinload(DbPost.comments)
+        )
+        .where(DbPost.id == post_id)
     )
     post = result.scalar_one_or_none()
     return post
@@ -31,3 +37,19 @@ async def get_all(db: AsyncSession):
     result = await db.execute(select(DbPost).options(selectinload(DbPost.user)))
     posts = result.scalars().all()
     return posts
+
+async def delete_post(db: AsyncSession, id: int, user_id: int):
+    result = await db.execute(select(DbPost).where(DbPost.id == id))
+    post = result.scalar_one_or_none()
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+    
+    if post.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this post"
+        )
+    
+    db.delete(post)
+    await db.commit()
