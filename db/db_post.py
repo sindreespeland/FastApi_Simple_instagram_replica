@@ -34,9 +34,16 @@ async def get_post_with_user_and_comments(db: AsyncSession, post_id: int) -> DbP
     return post
 
 async def get_all(db: AsyncSession):
-    result = await db.execute(select(DbPost).options(selectinload(DbPost.user)))
+    result = await db.execute(
+        select(DbPost)
+        .options(
+            selectinload(DbPost.user),      # Eagerly load user relationship
+            selectinload(DbPost.comments)   # Eagerly load comments relationship
+        )
+    )
     posts = result.scalars().all()
     return posts
+
 
 async def delete_post(db: AsyncSession, id: int, user_id: int):
     result = await db.execute(select(DbPost).where(DbPost.id == id))
@@ -51,5 +58,7 @@ async def delete_post(db: AsyncSession, id: int, user_id: int):
             detail="You do not have permission to delete this post"
         )
     
-    db.delete(post)
+    await db.delete(post)
+    await db.flush()
     await db.commit()
+

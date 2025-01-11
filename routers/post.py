@@ -49,6 +49,6 @@ async def upload_image(image: UploadFile = File(...), current_user: UserAuth = D
         'filename': path
     }
 
-@router.delete('/{id}')
+@router.delete('/delete/{id}')
 async def delete_post(id: int, db: AsyncSession = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
     return await db_post.delete_post(db, id, current_user.id)
